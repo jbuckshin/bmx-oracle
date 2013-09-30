@@ -11,7 +11,7 @@ namespace Inedo.BuildMasterExtensions.Oracle
     /// <summary>
     /// Connects to an Oracle database and provides change script functionality.
     /// </summary>
-    [ProviderProperties("Oracle", "Supports Oracle 9i and later; requires Oracle Data Access Components (ODAC) installed.")]
+    [ProviderProperties("Oracle", "Supports Oracle 9i and later; requires Oracle Data Access Components (ODAC) installed.", RequiresTransparentProxy = true)]
     [CustomEditor(typeof(OracleDatabaseProviderEditor))]
     public sealed class OracleDatabaseProvider : DatabaseProviderBase, IChangeScriptProvider
     {
