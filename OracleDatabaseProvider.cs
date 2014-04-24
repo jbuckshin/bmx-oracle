@@ -4,7 +4,7 @@ using System.Data;
 using Inedo.BuildMaster.Extensibility.Providers;
 using Inedo.BuildMaster.Extensibility.Providers.Database;
 using Inedo.BuildMaster.Web;
-using Oracle.DataAccess.Client;
+using Oracle.ManagedDataAccess.Client;
 
 namespace Inedo.BuildMasterExtensions.Oracle
 {
