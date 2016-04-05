@@ -10,7 +10,6 @@ namespace Inedo.BuildMasterExtensions.Oracle
         private static readonly Regex End = new Regex(@"\G\s*END\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Semicolon = new Regex(@"\G(\s*;)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
         private static readonly Regex StatementDelimiter = new Regex(@"\G(\s*;)|(\s*/\s*\n)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
-        
 
         public static IEnumerable<string> Process(string scriptText)
         {
@@ -33,13 +32,8 @@ namespace Inedo.BuildMasterExtensions.Oracle
                     buffer.Append(token);
                     lastTokenWasEnd = true;
                 }
-                else if (nestingLevel <= 0 && StatementDelimiter.IsMatch(token)
-                    && (
-                        (!lastTokenWasEnd)
-                        ||
-                        (lastTokenWasEnd && !Semicolon.IsMatch(token))
-                    ))
-                {   
+                else if (nestingLevel <= 0 && StatementDelimiter.IsMatch(token) && ((!lastTokenWasEnd) || (lastTokenWasEnd && !Semicolon.IsMatch(token))))
+                {
                     var script = buffer.ToString().Trim();
                     if (script != string.Empty)
                         yield return script;
