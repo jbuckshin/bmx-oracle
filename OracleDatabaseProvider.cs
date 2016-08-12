@@ -25,13 +25,25 @@ namespace Inedo.BuildMasterExtensions.Oracle
 
         public override Task ExecuteQueryAsync(string query, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(query))
+                return Complete;
+
+            var splitQueries = new List<string>(ScriptSplitter.Process(query)).ToArray();
+            this.LogDebug("Split into {0} queries.", splitQueries.Length);
+            
             using (var conn = new OracleConnection(this.ConnectionString))
             {
                 conn.Open();
 
-                using (var cmd = new OracleCommand(query, conn))
+                using (var cmd = new OracleCommand(string.Empty, conn))
                 {
-                    cmd.ExecuteNonQuery();
+                    for (int i = 0; i < splitQueries.Length; i++)
+                    {
+                        var splitQuery = splitQueries[i];
+                        this.LogDebug("Executing Query {0}...", i + 1);
+                        cmd.CommandText = splitQuery.Replace("\r", "");
+                        cmd.ExecuteNonQuery();
+                    }
                 }
             }
 
