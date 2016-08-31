@@ -17,7 +17,7 @@ REM remark
 REMARK remark2
 end";
         private const string Labels = "<<label1>>\n<<label2>>";
-        private const string Operators = "IF a<=b OR a = b";
+        private const string Operators = "IF a>=b OR a = b";
 
         [TestMethod]
         public void TestSimpleStatement()
@@ -66,7 +66,7 @@ end";
         {
             var rubbish = Tokenizer.GetTokens(Operators).ToArray();
             CollectionAssert.AreEqual(
-                new[] { "IF", " a", "<=", "b", " OR", " a", " =", " b"  },
+                new[] { "IF", " a", ">=", "b", " OR", " a", " =", " b"  },
                 Tokenizer.GetTokens(Operators).ToArray()
             );
         }

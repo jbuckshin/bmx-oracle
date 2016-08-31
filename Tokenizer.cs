@@ -15,10 +15,13 @@ namespace Inedo.BuildMasterExtensions.Oracle
         private static readonly Regex RemarkCommentRegex = new Regex(@"\G\s*REM(ARK)?\s+[^\n]*", RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex LabelRegex = new Regex(@"\G\s*<<.*?>>", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex ScriptSeparator = new Regex(@"\G\s*/\s*\n", RegexOptions.Compiled | RegexOptions.Singleline);
-        private static readonly Regex DoubleOperators = new Regex(@"\G\s*<=|>=|=>|<>|!=", RegexOptions.Compiled | RegexOptions.Singleline);
+        private static readonly Regex DoubleOperators = new Regex(@"\G\s*(<=|>=|=>|<>|!=)", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex SingleOperators = new Regex(@"\G\s*[~!@#$%&*()_\-+=|\[\]{}:;<>,.?/]", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex EverythingElse = new Regex(@"\G\s*\w+\b", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex Whitespace = new Regex(@"\G\s+$", RegexOptions.Compiled | RegexOptions.Singleline);
+        private static readonly Regex EndIf = new Regex(@"\G\s*END\s*IF;\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        private static readonly Regex Case = new Regex(@"\G\s*CASE\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        private static readonly Regex EndLoop = new Regex(@"\G\s*END\s*LOOP;\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
         private static readonly Regex[] Regexes = new[]
             {
                 StringRegex,
@@ -33,6 +36,9 @@ namespace Inedo.BuildMasterExtensions.Oracle
                 ScriptSeparator,
                 DoubleOperators,
                 SingleOperators,
+                Case,
+                EndIf,
+                EndLoop,
                 EverythingElse
             };
 
@@ -62,7 +68,7 @@ namespace Inedo.BuildMasterExtensions.Oracle
                     index++;
                 }
 
-            done: ;
+            done:;
             }
         }
     }
