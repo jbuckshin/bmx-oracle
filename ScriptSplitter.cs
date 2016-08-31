@@ -76,7 +76,7 @@ namespace Inedo.BuildMasterExtensions.Oracle
                 {
                     var script = buffer.ToString().Trim();
                     if (script != string.Empty)
-                        yield return script + (packageDef ? ";" : ""); // package definitions do not run with the ending semi
+                        yield return script + (packageDef ? ";" : ""); // package definitions do not run without the ending semi
 
                     buffer.Length = 0;
                     lastTokenWasEnd = false;
