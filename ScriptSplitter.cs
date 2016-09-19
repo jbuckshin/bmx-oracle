@@ -10,7 +10,12 @@ namespace Inedo.BuildMasterExtensions.Oracle
         private static readonly Regex Begin = new Regex(@"\G\s*BEGIN\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Create = new Regex(@"\G\s*CREATE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Package = new Regex(@"\G\s*PACKAGE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex Function = new Regex(@"\G\s*FUNCTION\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex Procedure = new Regex(@"\G\s*PROCEDURE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex Type = new Regex(@"\G\s+TYPE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex IsNull = new Regex(@"\G\s*IS\s+NULL\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex As = new Regex(@"\G\s*AS\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex Is = new Regex(@"\G\s*IS\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Case = new Regex(@"\G\s*CASE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex End = new Regex(@"\G\s*END\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex EndIF = new Regex(@"\G\s*END\s*IF\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
@@ -26,6 +31,8 @@ namespace Inedo.BuildMasterExtensions.Oracle
             bool lastTokenWasEnd = false;
             bool createDef = false;
             bool packageDef = false;
+            bool openAsOrIsStatement = false;
+            bool functionOrProcDef = false;
 
             foreach (var token in tokens)
             {
@@ -34,6 +41,10 @@ namespace Inedo.BuildMasterExtensions.Oracle
                     nestingLevel++;
                     buffer.Append(token);
                     lastTokenWasEnd = false;
+                    if (openAsOrIsStatement)
+                    {
+                        openAsOrIsStatement = false;
+                    }
                 }
                 else if (Case.IsMatch(token)) // case statements have explicit 'end'
                 {
@@ -64,20 +75,37 @@ namespace Inedo.BuildMasterExtensions.Oracle
                     buffer.Append(token);
                     lastTokenWasEnd = false;
                 }
-                else if (As.IsMatch(token))
+                else if (Function.IsMatch(token) || Procedure.IsMatch(token))
+                {
+                    functionOrProcDef = true;
+                    buffer.Append(token);
+                    lastTokenWasEnd = false;
+                }
+                else if (As.IsMatch(token) || Is.IsMatch(token))
                 {
                     if (packageDef)
+                    { // no need for conditional?
                         nestingLevel++;
+                    } else {
+                        // function or procedure definition, ignore statement delimiters until next BEGIN...
+                        // but type definitions, comments should not
+                        if (functionOrProcDef)
+                        {
+                            openAsOrIsStatement = true;
+                        }
+                    }
 
                     buffer.Append(token);
                     lastTokenWasEnd = false;
                 }
-                else if (nestingLevel <= 0 && StatementDelimiter.IsMatch(token) && ((!lastTokenWasEnd) || (lastTokenWasEnd && (!Semicolon.IsMatch(token) || (packageDef)))))
+                else if (nestingLevel <= 0 && (!openAsOrIsStatement) && StatementDelimiter.IsMatch(token) && ((!lastTokenWasEnd) || (lastTokenWasEnd && (!Semicolon.IsMatch(token) || (packageDef)))))
                 {
                     var script = buffer.ToString().Trim();
                     if (script != string.Empty)
-                        yield return script + (packageDef ? ";" : ""); // package definitions do not run without the ending semi
+                        yield return script + ((packageDef||functionOrProcDef) ? ";" : ""); // package definitions do not run without the ending semi
 
+                    functionOrProcDef = false;
+                    openAsOrIsStatement = false;
                     buffer.Length = 0;
                     lastTokenWasEnd = false;
                     packageDef = false;
