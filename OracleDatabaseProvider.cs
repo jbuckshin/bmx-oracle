@@ -31,6 +31,7 @@ namespace Inedo.BuildMasterExtensions.Oracle
             var splitQueries = new List<string>(ScriptSplitter.Process(query)).ToArray();
             this.LogDebug("Split into {0} queries.", splitQueries.Length);
             
+            
             using (var conn = new OracleConnection(this.ConnectionString))
             {
                 conn.Open();
@@ -41,7 +42,9 @@ namespace Inedo.BuildMasterExtensions.Oracle
                     {
                         var splitQuery = splitQueries[i];
                         this.LogDebug("Executing Query {0}...", i + 1);
+                        
                         cmd.CommandText = splitQuery.Replace("\r", "");
+                        this.LogDebug("Query {0} = [" + cmd.CommandText.Substring(0, (Math.Min(cmd.CommandText.Length, 100))) + "...]");
                         cmd.ExecuteNonQuery();
                     }
                 }

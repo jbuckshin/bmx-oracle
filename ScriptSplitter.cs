@@ -12,13 +12,16 @@ namespace Inedo.BuildMasterExtensions.Oracle
         private static readonly Regex Package = new Regex(@"\G\s*PACKAGE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Function = new Regex(@"\G\s*FUNCTION\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Procedure = new Regex(@"\G\s*PROCEDURE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        
         private static readonly Regex Type = new Regex(@"\G\s+TYPE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex IsNull = new Regex(@"\G\s*IS\s+NULL\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex As = new Regex(@"\G\s*AS\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Is = new Regex(@"\G\s*IS\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex Alter = new Regex(@"\G\s*ALTER\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Case = new Regex(@"\G\s*CASE\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex End = new Regex(@"\G\s*END\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex EndIF = new Regex(@"\G\s*END\s*IF\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        private static readonly Regex CursorDef = new Regex(@"\G\s*CURSOR\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex EndLoop = new Regex(@"\G\s*END\s*LOOP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
         private static readonly Regex Semicolon = new Regex(@"\G(\s*;)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
         private static readonly Regex StatementDelimiter = new Regex(@"\G(\s*;)|(\s*/\s*\n)", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
@@ -31,8 +34,10 @@ namespace Inedo.BuildMasterExtensions.Oracle
             bool lastTokenWasEnd = false;
             bool createDef = false;
             bool packageDef = false;
+            bool packageOpen = false;
             bool openAsOrIsStatement = false;
             bool functionOrProcDef = false;
+
 
             foreach (var token in tokens)
             {
@@ -49,6 +54,11 @@ namespace Inedo.BuildMasterExtensions.Oracle
                 else if (Case.IsMatch(token)) // case statements have explicit 'end'
                 {
                     nestingLevel++;
+                    buffer.Append(token);
+                    lastTokenWasEnd = false;
+                }
+                else if (CursorDef.IsMatch(token))
+                {
                     buffer.Append(token);
                     lastTokenWasEnd = false;
                 }
@@ -72,6 +82,18 @@ namespace Inedo.BuildMasterExtensions.Oracle
                 else if (Package.IsMatch(token))
                 {
                     packageDef = createDef;
+                    packageOpen = true;
+                    buffer.Append(token);
+                    lastTokenWasEnd = false;
+                }
+                else if (Alter.IsMatch(token))
+                {
+                    //alterStatement = true;
+                    buffer.Append(token);
+                    lastTokenWasEnd = false;
+                }
+                else if (IsNull.IsMatch(token)) // do not increase nesting.
+                {
                     buffer.Append(token);
                     lastTokenWasEnd = false;
                 }
@@ -83,9 +105,10 @@ namespace Inedo.BuildMasterExtensions.Oracle
                 }
                 else if (As.IsMatch(token) || Is.IsMatch(token))
                 {
-                    if (packageDef)
+                    if (packageOpen)
                     { // no need for conditional?
                         nestingLevel++;
+                        packageOpen = false;
                     } else {
                         // function or procedure definition, ignore statement delimiters until next BEGIN...
                         // but type definitions, comments should not
@@ -100,7 +123,9 @@ namespace Inedo.BuildMasterExtensions.Oracle
                 }
                 else if (nestingLevel <= 0 && (!openAsOrIsStatement) && StatementDelimiter.IsMatch(token) && ((!lastTokenWasEnd) || (lastTokenWasEnd && (!Semicolon.IsMatch(token) || (packageDef)))))
                 {
+                    
                     var script = buffer.ToString().Trim();
+                    
                     if (script != string.Empty)
                         yield return script + ((packageDef||functionOrProcDef) ? ";" : ""); // package definitions do not run without the ending semi
 
@@ -110,16 +135,18 @@ namespace Inedo.BuildMasterExtensions.Oracle
                     lastTokenWasEnd = false;
                     packageDef = false;
                     createDef = false;
+                    packageOpen = false;
                 }
                 else
                 {
                     buffer.Append(token);
                     lastTokenWasEnd = false;
                 }
+                System.Console.WriteLine(nestingLevel + " token:"+ token);
             }
 
             var lastScript = buffer.ToString().Trim();
-            if (lastScript != string.Empty)
+            if (lastScript != string.Empty && !lastScript.Equals("/") && !lastScript.Equals(";")) 
                 yield return lastScript;
         }
     }

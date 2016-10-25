@@ -20,6 +20,7 @@ namespace Inedo.BuildMasterExtensions.Oracle
         private static readonly Regex EverythingElse = new Regex(@"\G\s*\w+\b", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex Whitespace = new Regex(@"\G\s+$", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex EndIf = new Regex(@"\G\s*END\s*IF;\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        private static readonly Regex CursorDef = new Regex(@"\G\s*CURSOR;\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
         private static readonly Regex Case = new Regex(@"\G\s*CASE\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
         private static readonly Regex IsNull = new Regex(@"\G\s*IS\s+NULL\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
         private static readonly Regex EndLoop = new Regex(@"\G\s*END\s*LOOP;\s*", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
